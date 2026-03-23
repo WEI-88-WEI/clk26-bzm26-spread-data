@@ -1,72 +1,98 @@
-# CL vs BRENTOIL 日线价差数据
+# CL vs BRENTOIL 价差数据
 
-这个仓库用于保存并展示来自 **Hyperliquid `xyz` 市场** 的日线数据与价差数据：
+这个仓库用于保存并展示来自 **Hyperliquid `xyz` 市场** 的价格与价差数据：
 
 - `xyz:CL`
 - `xyz:BRENTOIL`
 
-当前仓库支持：
+当前仓库已经支持：
 
-1. **重复抓取最新数据**
-2. 自动生成最新 CSV
-3. 自动生成图表所需的 `data.json`
-4. 用网页直接展示价格与价差图
+1. **小时级数据（主展示）**
+2. **日线数据（保留）**
+3. **多次重复抓取更新**
+4. 自动生成 CSV / JSON / 图表
 
 ---
 
 ## 数据来源
 
-- API: `https://api.hyperliquid.xyz/info`
-- 数据类型：`candleSnapshot`
-- 周期：`1d`
+- API：`https://api.hyperliquid.xyz/info`
+- 数据接口：`candleSnapshot`
 - 市场：`dex = xyz`
 
+当前抓取两个周期：
+
+- `1h`：小时级数据
+- `1d`：日线数据
+
 说明：
-- `xyz:CL` 的历史长度目前比 `xyz:BRENTOIL` 更长
-- 价差表使用两者 **日期交集** 生成
-- 因此当前 CSV 代表的是两者都存在数据的重叠区间
+- `xyz:CL` 的历史比 `xyz:BRENTOIL` 更长
+- 价差数据使用两者的**时间交集**生成
+- 因此最终展示长度取决于两者重叠区间
 
 ---
 
 ## 仓库文件
 
-- `update_data.py`：抓取并更新数据的脚本
-- `clk26_bzm26_daily_spread.csv`：日线收盘价与价差表
-- `data.json`：图表使用的结构化数据
+### 脚本
+- `update_data.py`：抓取并更新全部数据
+
+### 小时级
+- `clk26_bzm26_hourly_spread.csv`
+- `data_hourly.json`
+
+### 日线级
+- `clk26_bzm26_daily_spread.csv`
+- `data_daily.json`
+
+### 兼容文件
+- `data.json`：当前默认指向小时级图表数据
+
+### 页面
 - `index.html`：图表页面
 
 ---
 
-## CSV 字段说明
+## 当前字段说明
 
-- `date`：日期（UTC）
-- `cl_close`：`xyz:CL` 日线收盘价
-- `bren_close`：`xyz:BRENTOIL` 日线收盘价
-- `spread_abs_bren_minus_cl`：绝对价差 = `BRENTOIL - CL`
-- `spread_pct_vs_cl`：相对价差 = `(BRENTOIL - CL) / CL`
+CSV 中保留了完整 OHLC：
+
+- `bucket`：时间桶（UTC）
+- `cl_open` / `cl_high` / `cl_low` / `cl_close`
+- `bren_open` / `bren_high` / `bren_low` / `bren_close`
+- `spread_abs_bren_minus_cl`
+- `spread_pct_vs_cl`
+
+其中：
+- 绝对价差 = `BRENTOIL_close - CL_close`
+- 相对价差 = `(BRENTOIL_close - CL_close) / CL_close`
 
 ---
 
 ## 如何更新数据
 
-在仓库目录执行：
+在仓库目录运行：
 
 ```bash
 python3 update_data.py
 ```
 
-脚本会：
+脚本会自动：
 
-1. 从 Hyperliquid 拉取 `xyz:CL` 全部可用日线
-2. 从 Hyperliquid 拉取 `xyz:BRENTOIL` 全部可用日线
-3. 计算两者重叠区间的日线价差
-4. 覆盖更新：
+1. 拉取 `xyz:CL` 的 `1h` 和 `1d` 数据
+2. 拉取 `xyz:BRENTOIL` 的 `1h` 和 `1d` 数据
+3. 计算两个周期下的重叠价差
+4. 更新：
+   - `clk26_bzm26_hourly_spread.csv`
    - `clk26_bzm26_daily_spread.csv`
+   - `data_hourly.json`
+   - `data_daily.json`
    - `data.json`
 
-这意味着它天然支持**多次拿取**：
-- 想刷新就再次运行脚本即可
-- 不需要手动改图表数据
+这意味着仓库天然支持：
+- **反复更新**
+- **以后继续追加新数据**
+- **页面自动读取最新结果**
 
 ---
 
@@ -76,25 +102,52 @@ python3 update_data.py
 
 - `index.html`
 
-页面会读取 `data.json` 并展示：
+当前页面默认读取：
+- `data.json`
 
-1. 上图：`CL` 与 `BRENTOIL` 日线收盘价
-2. 中图：绝对价差 `BRENTOIL - CL`
-3. 下图：相对价差 `%`
+而 `data.json` 现在默认映射为：
+- **小时级数据**
+
+页面展示：
+
+1. 上图：CL 与 BRENTOIL 收盘价
+2. 中图：绝对价差
+3. 下图：相对价差 %
 
 支持：
-- 鼠标悬停查看数值
 - 缩放
 - 拖动
+- 鼠标悬停查看数值
 - 范围选择
 
 ---
 
-## 当前已知情况
+## 当前实际可用长度
 
-截至当前版本：
-- `xyz:CL` 的可用日线更长
-- `xyz:BRENTOIL` 的可用日线较短
-- 因此最终重叠区间从 `2026-03-04` 开始
+按当前抓取结果：
 
-如果 Hyperliquid 后续补充更早的 `xyz:BRENTOIL` 历史数据，重新运行脚本后仓库数据会自动变长。
+### 日线
+- `xyz:CL`：77 根
+- `xyz:BRENTOIL`：20 根
+- 重叠：20 根
+
+### 小时线
+- `xyz:CL`：1812 根
+- `xyz:BRENTOIL`：442 根
+- 重叠：442 根
+
+所以如果你的目标是“尽可能拿到更长的数据”，当前仓库应以：
+- **小时级数据为主**
+- 日线作为辅助保留
+
+---
+
+## 说明
+
+如果 Hyperliquid 后续提供更长的 `xyz:BRENTOIL` 历史，重新执行：
+
+```bash
+python3 update_data.py
+```
+
+数据长度会自动变长，无需额外改代码。

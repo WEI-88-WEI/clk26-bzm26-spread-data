@@ -18,10 +18,10 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>CL vs BRENTOIL 日线价差</h1>
+    <h1>CL vs BRENTOIL 小时级价差</h1>
     <div class="sub">
-      数据来自 Hyperliquid <code>xyz</code> 市场。上图显示 <code>xyz:CL</code> 与 <code>xyz:BRENTOIL</code> 日线收盘价，
-      中图显示绝对价差（BRENTOIL - CL），下图显示相对价差（相对 CL）。
+      数据来自 Hyperliquid <code>xyz</code> 市场。当前页面默认读取<strong>小时级</strong>数据。
+      上图显示 <code>xyz:CL</code> 与 <code>xyz:BRENTOIL</code> 收盘价，中图显示绝对价差（BRENTOIL - CL），下图显示相对价差（相对 CL）。
     </div>
     <div id="meta" class="meta">正在加载数据…</div>
     <div id="chart"></div>
@@ -37,9 +37,10 @@
       document.getElementById('meta').innerHTML = [
         `数据源：${meta.source}（dex=${meta.dex}）`,
         `更新时间：${meta.updated_at}`,
-        `CL 日线数：${meta.counts.cl_days}`,
-        `BRENTOIL 日线数：${meta.counts.bren_days}`,
-        `重叠区间天数：${meta.counts.overlap_days}`
+        `周期：${meta.interval}`,
+        `CL 条数：${meta.counts.cl_bars ?? meta.counts.cl_days}`,
+        `BRENTOIL 条数：${meta.counts.bren_bars ?? meta.counts.bren_days}`,
+        `重叠条数：${meta.counts.overlap_bars ?? meta.counts.overlap_days}`
       ].join(' ｜ ');
 
       const chart = echarts.init(document.getElementById('chart'));
@@ -56,7 +57,7 @@
           formatter: (params) => {
             const i = params[0].dataIndex;
             return [
-              `<b>${series.dates[i]}</b>`,
+              `<b>${series.buckets[i] ?? series.dates[i]}</b>`,
               `CL：${Number(series.cl_close[i]).toFixed(3)}`,
               `BRENTOIL：${Number(series.bren_close[i]).toFixed(3)}`,
               `绝对价差：${Number(series.spread_abs_bren_minus_cl[i]).toFixed(3)}`,
@@ -71,9 +72,9 @@
           { left: 70, right: 30, top: 620, height: 140 }
         ],
         xAxis: [
-          { type: 'category', boundaryGap: false, data: series.dates, axisLine: { lineStyle: { color: '#475569' } }, axisLabel: { color: '#94a3b8' } },
-          { type: 'category', boundaryGap: false, gridIndex: 1, data: series.dates, axisLine: { lineStyle: { color: '#475569' } }, axisLabel: { color: '#94a3b8' } },
-          { type: 'category', boundaryGap: false, gridIndex: 2, data: series.dates, axisLine: { lineStyle: { color: '#475569' } }, axisLabel: { color: '#94a3b8' } }
+          { type: 'category', boundaryGap: false, data: series.buckets ?? series.dates, axisLine: { lineStyle: { color: '#475569' } }, axisLabel: { color: '#94a3b8' } },
+          { type: 'category', boundaryGap: false, gridIndex: 1, data: series.buckets ?? series.dates, axisLine: { lineStyle: { color: '#475569' } }, axisLabel: { color: '#94a3b8' } },
+          { type: 'category', boundaryGap: false, gridIndex: 2, data: series.buckets ?? series.dates, axisLine: { lineStyle: { color: '#475569' } }, axisLabel: { color: '#94a3b8' } }
         ],
         yAxis: [
           { type: 'value', scale: true, axisLine: { lineStyle: { color: '#475569' } }, splitLine: { lineStyle: { color: '#1e293b' } }, axisLabel: { color: '#94a3b8' } },
