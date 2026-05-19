@@ -3,13 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CL vs BRENTOIL 日线价差</title>
+  <title>CL vs BRENTOIL 价差</title>
   <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
   <style>
     body { margin: 0; font-family: Inter, Arial, sans-serif; background: #0b1020; color: #e5e7eb; }
     .wrap { max-width: 1400px; margin: 0 auto; padding: 24px; }
     h1 { margin: 0 0 8px; font-size: 28px; }
     .sub { color: #94a3b8; margin-bottom: 16px; line-height: 1.6; }
+    .toolbar { display: flex; gap: 10px; margin: 12px 0 16px; flex-wrap: wrap; }
+    .toolbar button {
+      cursor: pointer; border: 1px solid #334155; border-radius: 999px; padding: 8px 16px;
+      color: #cbd5e1; background: #0f172a; font-size: 14px;
+    }
+    .toolbar button.active { color: #082f49; background: #7dd3fc; border-color: #7dd3fc; font-weight: 700; }
     #chart { width: 100%; height: 920px; background: #111827; border-radius: 16px; }
     .meta { margin: 14px 0 18px; color: #cbd5e1; font-size: 14px; line-height: 1.7; }
     .note { margin-top: 12px; color: #94a3b8; font-size: 13px; }
@@ -18,23 +24,48 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>CL vs BRENTOIL 小时级价差</h1>
+    <h1>CL vs BRENTOIL 价差</h1>
     <div class="sub">
-      数据来自 Hyperliquid <code>xyz</code> 市场。当前页面默认读取<strong>小时级</strong>数据。
+      数据来自 Hyperliquid <code>xyz</code> 市场。可切换<strong>小时级</strong>和<strong>日线</strong>数据。
       上图显示 <code>xyz:CL</code> 与 <code>xyz:BRENTOIL</code> 收盘价，中图显示绝对价差（BRENTOIL - CL），下图显示相对价差（相对 CL）。
+    </div>
+    <div class="toolbar">
+      <button id="btn-hourly" class="active" type="button">小时线</button>
+      <button id="btn-daily" type="button">日线</button>
     </div>
     <div id="meta" class="meta">正在加载数据…</div>
     <div id="chart"></div>
-    <div class="note">如果你更新了 <code>data.json</code>，刷新页面即可看到最新图表。</div>
+    <div class="note">更新数据后刷新页面即可看到最新图表。小时线读取 <code>data_hourly.json</code>，日线读取 <code>data_daily.json</code>。</div>
   </div>
 
   <script>
-    async function main() {
-      const res = await fetch('./data.json', { cache: 'no-store' });
+    const datasets = {
+      hourly: { label: '小时线', file: './data_hourly.json', buttonId: 'btn-hourly' },
+      daily: { label: '日线', file: './data_daily.json', buttonId: 'btn-daily' }
+    };
+
+    const chart = echarts.init(document.getElementById('chart'));
+
+    function setActive(kind) {
+      for (const [key, cfg] of Object.entries(datasets)) {
+        document.getElementById(cfg.buttonId).classList.toggle('active', key === kind);
+      }
+    }
+
+    async function loadData(kind) {
+      const cfg = datasets[kind];
+      setActive(kind);
+      document.getElementById('meta').textContent = `正在加载${cfg.label}数据…`;
+
+      const res = await fetch(cfg.file, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`${cfg.file} HTTP ${res.status}`);
+
       const data = await res.json();
       const { meta, series } = data;
+      const buckets = series.buckets ?? series.dates;
 
       document.getElementById('meta').innerHTML = [
+        `当前：${cfg.label}`,
         `数据源：${meta.source}（dex=${meta.dex}）`,
         `更新时间：${meta.updated_at}`,
         `周期：${meta.interval}`,
@@ -43,7 +74,6 @@
         `重叠条数：${meta.counts.overlap_bars ?? meta.counts.overlap_days}`
       ].join(' ｜ ');
 
-      const chart = echarts.init(document.getElementById('chart'));
       chart.setOption({
         backgroundColor: '#111827',
         animation: false,
@@ -57,7 +87,7 @@
           formatter: (params) => {
             const i = params[0].dataIndex;
             return [
-              `<b>${series.buckets[i] ?? series.dates[i]}</b>`,
+              `<b>${buckets[i]}</b>`,
               `CL：${Number(series.cl_close[i]).toFixed(3)}`,
               `BRENTOIL：${Number(series.bren_close[i]).toFixed(3)}`,
               `绝对价差：${Number(series.spread_abs_bren_minus_cl[i]).toFixed(3)}`,
@@ -72,14 +102,14 @@
           { left: 70, right: 30, top: 620, height: 140 }
         ],
         xAxis: [
-          { type: 'category', boundaryGap: false, data: series.buckets ?? series.dates, axisLine: { lineStyle: { color: '#475569' } }, axisLabel: { color: '#94a3b8' } },
-          { type: 'category', boundaryGap: false, gridIndex: 1, data: series.buckets ?? series.dates, axisLine: { lineStyle: { color: '#475569' } }, axisLabel: { color: '#94a3b8' } },
-          { type: 'category', boundaryGap: false, gridIndex: 2, data: series.buckets ?? series.dates, axisLine: { lineStyle: { color: '#475569' } }, axisLabel: { color: '#94a3b8' } }
+          { type: 'category', boundaryGap: false, data: buckets, axisLine: { lineStyle: { color: '#475569' } }, axisLabel: { color: '#94a3b8' } },
+          { type: 'category', boundaryGap: false, gridIndex: 1, data: buckets, axisLine: { lineStyle: { color: '#475569' } }, axisLabel: { color: '#94a3b8' } },
+          { type: 'category', boundaryGap: false, gridIndex: 2, data: buckets, axisLine: { lineStyle: { color: '#475569' } }, axisLabel: { color: '#94a3b8' } }
         ],
         yAxis: [
           { type: 'value', scale: true, axisLine: { lineStyle: { color: '#475569' } }, splitLine: { lineStyle: { color: '#1e293b' } }, axisLabel: { color: '#94a3b8' } },
           { type: 'value', gridIndex: 1, scale: true, axisLine: { lineStyle: { color: '#475569' } }, splitLine: { lineStyle: { color: '#1e293b' } }, axisLabel: { color: '#94a3b8' } },
-          { type: 'value', gridIndex: 2, scale: true, axisLine: { lineStyle: { color: '#475569' } }, splitLine: { lineStyle: { color: '#1e293b' } }, axisLabel: { color: '#94a3b8' }, axisLabelFormatter: '{value}%' }
+          { type: 'value', gridIndex: 2, scale: true, axisLine: { lineStyle: { color: '#475569' } }, splitLine: { lineStyle: { color: '#1e293b' } }, axisLabel: { color: '#94a3b8', formatter: '{value}%' } }
         ],
         dataZoom: [
           { type: 'inside', xAxisIndex: [0, 1, 2], start: 0, end: 100 },
@@ -91,13 +121,18 @@
           { name: '绝对价差', type: 'line', showSymbol: false, xAxisIndex: 1, yAxisIndex: 1, data: series.spread_abs_bren_minus_cl, areaStyle: { color: 'rgba(34,197,94,0.18)' }, lineStyle: { width: 2 } },
           { name: '相对价差%', type: 'line', showSymbol: false, xAxisIndex: 2, yAxisIndex: 2, data: series.spread_pct_vs_cl.map(v => Number(v) * 100), areaStyle: { color: 'rgba(167,139,250,0.16)' }, lineStyle: { width: 2 } }
         ]
-      });
-      window.addEventListener('resize', () => chart.resize());
+      }, true);
     }
 
-    main().catch(err => {
+    document.getElementById('btn-hourly').addEventListener('click', () => loadData('hourly').catch(showError));
+    document.getElementById('btn-daily').addEventListener('click', () => loadData('daily').catch(showError));
+    window.addEventListener('resize', () => chart.resize());
+
+    function showError(err) {
       document.getElementById('meta').textContent = '数据加载失败：' + err;
-    });
+    }
+
+    loadData('hourly').catch(showError);
   </script>
 </body>
 </html>
