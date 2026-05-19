@@ -29,9 +29,6 @@ OUTPUTS = {
     },
 }
 
-LEGACY_JSON = ROOT / "data.json"
-
-
 def post_json(payload: dict):
     req = urllib.request.Request(API_URL, data=json.dumps(payload).encode(), headers=HEADERS)
     with urllib.request.urlopen(req, timeout=60) as r:
@@ -168,7 +165,6 @@ def generate(interval: str):
 def main():
     daily = generate("1d")
     hourly = generate("1h")
-    LEGACY_JSON.write_text((ROOT / "data_hourly.json").read_text(encoding="utf-8"), encoding="utf-8")
     print(json.dumps({"daily": daily, "hourly": hourly}, ensure_ascii=False))
 
 

@@ -45,9 +45,6 @@
 - `clk26_bzm26_daily_spread.csv`
 - `data_daily.json`
 
-### 兼容文件
-- `data.json`：当前默认指向小时级图表数据
-
 ### 页面
 - `index.html`：图表页面
 
@@ -87,7 +84,6 @@ python3 update_data.py
    - `clk26_bzm26_daily_spread.csv`
    - `data_hourly.json`
    - `data_daily.json`
-   - `data.json`
 
 这意味着仓库天然支持：
 - **反复更新**
@@ -102,11 +98,9 @@ python3 update_data.py
 
 - `index.html`
 
-当前页面默认读取：
-- `data.json`
-
-而 `data.json` 现在默认映射为：
-- **小时级数据**
+当前页面支持切换读取：
+- `data_hourly.json`：小时级数据
+- `data_daily.json`：日线数据
 
 页面展示：
 
