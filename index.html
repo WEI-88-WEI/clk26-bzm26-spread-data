@@ -16,7 +16,7 @@
       color: #cbd5e1; background: #0f172a; font-size: 14px;
     }
     .toolbar button.active { color: #082f49; background: #7dd3fc; border-color: #7dd3fc; font-weight: 700; }
-    #chart { width: 100%; height: 920px; background: #111827; border-radius: 16px; }
+    #chart { width: 100%; height: 720px; background: #111827; border-radius: 16px; }
     .meta { margin: 14px 0 18px; color: #cbd5e1; font-size: 14px; line-height: 1.7; }
     .note { margin-top: 12px; color: #94a3b8; font-size: 13px; }
     a { color: #7dd3fc; }
@@ -27,7 +27,7 @@
     <h1>CL vs BRENTOIL 价差</h1>
     <div class="sub">
       数据来自 Hyperliquid <code>xyz</code> 市场。可切换<strong>小时级</strong>和<strong>日线</strong>数据。
-      上图显示 <code>xyz:CL</code> 与 <code>xyz:BRENTOIL</code> 收盘价，中图显示绝对价差（BRENTOIL - CL），下图显示相对价差（相对 CL）。
+      上图显示 <code>xyz:CL</code> 与 <code>xyz:BRENTOIL</code> 收盘价，下图显示绝对价差（BRENTOIL - CL）。悬停时会同时显示价格、绝对价差和相对价差。
     </div>
     <div class="toolbar">
       <button id="btn-hourly" class="active" type="button">小时线</button>
@@ -86,45 +86,36 @@
           textStyle: { color: '#e5e7eb' },
           formatter: (params) => {
             const i = params[0].dataIndex;
-            const lines = [`<b>${buckets[i]}</b>`];
-            for (const p of params) {
-              const value = Number(p.value);
-              const suffix = p.seriesName.includes('%') ? '%' : '';
-              lines.push(`${p.marker}${p.seriesName}：${value.toFixed(3)}${suffix}`);
-            }
-            return lines.join('<br/>');
+            return [
+              `<b>${buckets[i]}</b>`,
+              `CL：${Number(series.cl_close[i]).toFixed(3)}`,
+              `BRENTOIL：${Number(series.bren_close[i]).toFixed(3)}`,
+              `绝对价差：${Number(series.spread_abs_bren_minus_cl[i]).toFixed(3)}`,
+              `相对价差：${(Number(series.spread_pct_vs_cl[i]) * 100).toFixed(2)}%`
+            ].join('<br/>');
           }
         },
         legend: { top: 10, textStyle: { color: '#cbd5e1' } },
-        title: [
-          { text: '价格走势', left: 70, top: 34, textStyle: { color: '#cbd5e1', fontSize: 13, fontWeight: 500 } },
-          { text: '绝对价差（BRENTOIL - CL）', left: 70, top: 354, textStyle: { color: '#cbd5e1', fontSize: 13, fontWeight: 500 } },
-          { text: '相对价差（相对 CL）', left: 70, top: 594, textStyle: { color: '#cbd5e1', fontSize: 13, fontWeight: 500 } }
-        ],
         grid: [
-          { left: 70, right: 30, top: 60, height: 260 },
-          { left: 70, right: 30, top: 380, height: 180 },
-          { left: 70, right: 30, top: 620, height: 140 }
+          { left: 70, right: 30, top: 60, height: 300 },
+          { left: 70, right: 30, top: 430, height: 180 }
         ],
         xAxis: [
           { type: 'category', boundaryGap: false, data: buckets, axisLine: { lineStyle: { color: '#475569' } }, axisLabel: { color: '#94a3b8' } },
-          { type: 'category', boundaryGap: false, gridIndex: 1, data: buckets, axisLine: { lineStyle: { color: '#475569' } }, axisLabel: { color: '#94a3b8' } },
-          { type: 'category', boundaryGap: false, gridIndex: 2, data: buckets, axisLine: { lineStyle: { color: '#475569' } }, axisLabel: { color: '#94a3b8' } }
+          { type: 'category', boundaryGap: false, gridIndex: 1, data: buckets, axisLine: { lineStyle: { color: '#475569' } }, axisLabel: { color: '#94a3b8' } }
         ],
         yAxis: [
           { type: 'value', scale: true, axisLine: { lineStyle: { color: '#475569' } }, splitLine: { lineStyle: { color: '#1e293b' } }, axisLabel: { color: '#94a3b8' } },
-          { type: 'value', gridIndex: 1, scale: true, axisLine: { lineStyle: { color: '#475569' } }, splitLine: { lineStyle: { color: '#1e293b' } }, axisLabel: { color: '#94a3b8' } },
-          { type: 'value', gridIndex: 2, scale: true, axisLine: { lineStyle: { color: '#475569' } }, splitLine: { lineStyle: { color: '#1e293b' } }, axisLabel: { color: '#94a3b8', formatter: '{value}%' } }
+          { type: 'value', gridIndex: 1, scale: true, axisLine: { lineStyle: { color: '#475569' } }, splitLine: { lineStyle: { color: '#1e293b' } }, axisLabel: { color: '#94a3b8' } }
         ],
         dataZoom: [
-          { type: 'inside', xAxisIndex: [0, 1, 2], start: 0, end: 100 },
-          { type: 'slider', xAxisIndex: [0, 1, 2], bottom: 40, height: 24, start: 0, end: 100, borderColor: '#334155', backgroundColor: '#0f172a', fillerColor: 'rgba(56,189,248,0.25)', textStyle: { color: '#94a3b8' } }
+          { type: 'inside', xAxisIndex: [0, 1], start: 0, end: 100 },
+          { type: 'slider', xAxisIndex: [0, 1], bottom: 40, height: 24, start: 0, end: 100, borderColor: '#334155', backgroundColor: '#0f172a', fillerColor: 'rgba(56,189,248,0.25)', textStyle: { color: '#94a3b8' } }
         ],
         series: [
           { name: 'CL', type: 'line', showSymbol: false, xAxisIndex: 0, yAxisIndex: 0, data: series.cl_close, lineStyle: { width: 2 } },
           { name: 'BRENTOIL', type: 'line', showSymbol: false, xAxisIndex: 0, yAxisIndex: 0, data: series.bren_close, lineStyle: { width: 2 } },
-          { name: '绝对价差', type: 'line', showSymbol: false, xAxisIndex: 1, yAxisIndex: 1, data: series.spread_abs_bren_minus_cl, areaStyle: { color: 'rgba(34,197,94,0.18)' }, lineStyle: { width: 2 } },
-          { name: '相对价差%', type: 'line', showSymbol: false, xAxisIndex: 2, yAxisIndex: 2, data: series.spread_pct_vs_cl.map(v => Number(v) * 100), areaStyle: { color: 'rgba(167,139,250,0.16)' }, lineStyle: { width: 2 } }
+          { name: '绝对价差', type: 'line', showSymbol: false, xAxisIndex: 1, yAxisIndex: 1, data: series.spread_abs_bren_minus_cl, areaStyle: { color: 'rgba(34,197,94,0.18)' }, lineStyle: { width: 2 } }
         ]
       }, true);
     }
