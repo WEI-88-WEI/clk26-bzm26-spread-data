@@ -86,16 +86,21 @@
           textStyle: { color: '#e5e7eb' },
           formatter: (params) => {
             const i = params[0].dataIndex;
-            return [
-              `<b>${buckets[i]}</b>`,
-              `CL：${Number(series.cl_close[i]).toFixed(3)}`,
-              `BRENTOIL：${Number(series.bren_close[i]).toFixed(3)}`,
-              `绝对价差：${Number(series.spread_abs_bren_minus_cl[i]).toFixed(3)}`,
-              `相对价差：${(Number(series.spread_pct_vs_cl[i]) * 100).toFixed(2)}%`
-            ].join('<br/>');
+            const lines = [`<b>${buckets[i]}</b>`];
+            for (const p of params) {
+              const value = Number(p.value);
+              const suffix = p.seriesName.includes('%') ? '%' : '';
+              lines.push(`${p.marker}${p.seriesName}：${value.toFixed(3)}${suffix}`);
+            }
+            return lines.join('<br/>');
           }
         },
         legend: { top: 10, textStyle: { color: '#cbd5e1' } },
+        title: [
+          { text: '价格走势', left: 70, top: 34, textStyle: { color: '#cbd5e1', fontSize: 13, fontWeight: 500 } },
+          { text: '绝对价差（BRENTOIL - CL）', left: 70, top: 354, textStyle: { color: '#cbd5e1', fontSize: 13, fontWeight: 500 } },
+          { text: '相对价差（相对 CL）', left: 70, top: 594, textStyle: { color: '#cbd5e1', fontSize: 13, fontWeight: 500 } }
+        ],
         grid: [
           { left: 70, right: 30, top: 60, height: 260 },
           { left: 70, right: 30, top: 380, height: 180 },
